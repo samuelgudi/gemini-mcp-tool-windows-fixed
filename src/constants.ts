@@ -79,13 +79,40 @@ export const CLI = {
   },
 } as const;
 
+// Shared Session Management Constants
+export const SESSION = {
+  BASE_DIR: '.gemini-mcp/sessions', // Base directory in user's home
+  DEFAULT_TTL: 24 * 60 * 60 * 1000, // 24 hours default
+  DEFAULT_MAX_SESSIONS: 20,
+  DEFAULT_EVICTION_POLICY: 'lru' as const,
+
+  // Per-tool configurations
+  TOOL_CONFIGS: {
+    'review-code': {
+      TTL: 24 * 60 * 60 * 1000, // 24 hours
+      MAX_SESSIONS: 20,
+      EVICTION_POLICY: 'fifo' as const
+    },
+    'ask-gemini': {
+      TTL: 7 * 24 * 60 * 60 * 1000, // 7 days
+      MAX_SESSIONS: 50,
+      EVICTION_POLICY: 'lru' as const
+    },
+    'brainstorm': {
+      TTL: 14 * 24 * 60 * 60 * 1000, // 14 days
+      MAX_SESSIONS: 30,
+      EVICTION_POLICY: 'lru' as const
+    }
+  }
+} as const;
+
 // Code Review Constants
 export const REVIEW = {
-  // Session configuration
+  // Session configuration (deprecated - use SESSION constants)
   SESSION: {
-    TTL: 60 * 60 * 1000, // 60 minutes
+    TTL: 60 * 60 * 1000, // 60 minutes (deprecated)
     MAX_SESSIONS: 20,
-    CACHE_DIR_NAME: 'gemini-mcp-review-sessions',
+    CACHE_DIR_NAME: 'gemini-mcp-review-sessions', // deprecated
   },
   // Review types
   TYPES: {
@@ -143,6 +170,10 @@ export interface ToolArguments {
   chunkCacheKey?: string; // Optional cache key for continuation
   message?: string; // For Ping tool -- Un-used.
 
+  // --> shared session parameters (ask-gemini, brainstorm, review-code)
+  session?: string; // Session ID for conversation continuity
+  includeHistory?: boolean; // Include conversation/review history in prompt
+
   // --> brainstorm tool
   methodology?: string; // Brainstorming framework to use
   domain?: string; // Domain context for specialized brainstorming
@@ -153,7 +184,7 @@ export interface ToolArguments {
 
   // --> review-code tool
   files?: string[]; // Specific files to review
-  sessionId?: string; // Explicit session ID override
+  sessionId?: string; // Explicit session ID override (review-code uses this OR git-based)
   forceNewSession?: boolean; // Force create new session
   reviewType?: string; // Type of review (security, performance, etc.)
   severity?: string; // Filter by severity level
@@ -162,7 +193,6 @@ export interface ToolArguments {
     decision: string;
     notes?: string;
   }>; // Decision tracking for previous comments
-  includeHistory?: boolean; // Include conversation history in prompt
 
   [key: string]: string | boolean | number | undefined | string[] | Array<any>; // Allow additional properties
 }

@@ -7,13 +7,14 @@ import {
   detectSessionContinuation
 } from '../utils/gitStateDetector.js';
 import {
-  CodeReviewSession,
-  ReviewRound,
-  ReviewComment,
   loadReviewSession,
   saveReviewSession,
   createNewSession
-} from '../utils/reviewSessionCache.js';
+} from '../utils/reviewSessionManager.js';
+import type {
+  ReviewCodeSessionData as CodeReviewSession,
+} from '../utils/sessionSchemas.js';
+import type { ReviewComment, ReviewRound } from '../utils/reviewSessionCache.js';
 import { buildReviewPrompt, extractFilesFromPrompt } from '../utils/reviewPromptBuilder.js';
 import { parseReviewResponse, validateComments } from '../utils/reviewResponseParser.js';
 import {

@@ -1,3 +1,13 @@
+/**
+ * @deprecated This file is deprecated. Session management has been migrated to the shared infrastructure.
+ *
+ * - For session operations, use: src/utils/reviewSessionManager.ts
+ * - For type definitions, use: src/utils/sessionSchemas.ts
+ *
+ * This file is kept only for backward compatibility and type exports (ReviewComment, ReviewRound).
+ * The actual session cache functions (save/load/create) have been moved to reviewSessionManager.ts
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';

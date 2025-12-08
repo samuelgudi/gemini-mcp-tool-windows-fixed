@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { UnifiedTool } from './registry.js';
 import { Logger } from '../utils/logger.js';
 import { executeGeminiCLI } from '../utils/geminiExecutor.js';
+import { brainstormSessionManager } from '../utils/brainstormSessionManager.js';
 
 function buildBrainstormPrompt(config: {
   prompt: string;
@@ -117,6 +118,7 @@ ${domain ? `Given the ${domain} domain, I'll apply the most effective combinatio
 
 const brainstormArgsSchema = z.object({
   prompt: z.string().min(1).describe("Primary brainstorming challenge or question to explore"),
+  session: z.string().optional().describe("Session ID for tracking ideas across rounds (e.g., 'feature-ideas'). Enables iterative brainstorming with context."),
   model: z.string().optional().describe("Optional model to use (e.g., 'gemini-2.5-flash'). If not specified, uses the default model (gemini-2.5-pro)."),
   methodology: z.enum(['divergent', 'convergent', 'scamper', 'design-thinking', 'lateral', 'auto']).default('auto').describe("Brainstorming framework: 'divergent' (generate many ideas), 'convergent' (refine existing), 'scamper' (systematic triggers), 'design-thinking' (human-centered), 'lateral' (unexpected connections), 'auto' (AI selects best)"),
   domain: z.string().optional().describe("Domain context for specialized brainstorming (e.g., 'software', 'business', 'creative', 'research', 'product', 'marketing')"),
@@ -124,6 +126,7 @@ const brainstormArgsSchema = z.object({
   existingContext: z.string().optional().describe("Background information, previous attempts, or current state to build upon"),
   ideaCount: z.number().int().positive().default(12).describe("Target number of ideas to generate (default: 10-15)"),
   includeAnalysis: z.boolean().default(true).describe("Include feasibility, impact, and implementation analysis for generated ideas"),
+  includeHistory: z.boolean().default(true).describe("Include previously generated ideas in context (only applies when session is provided). Default: true"),
 });
 
 export const brainstormTool: UnifiedTool = {
@@ -137,17 +140,43 @@ export const brainstormTool: UnifiedTool = {
   execute: async (args, onProgress) => {
     const {
       prompt,
+      session,
       model,
       methodology = 'auto',
       domain,
       constraints,
       existingContext,
       ideaCount = 12,
-      includeAnalysis = true
+      includeAnalysis = true,
+      includeHistory = true
     } = args;
 
     if (!prompt?.trim()) {
       throw new Error("You must provide a valid brainstorming challenge or question to explore");
+    }
+
+    // Session handling
+    let sessionData = null;
+    let contextualizedExistingContext = existingContext;
+
+    if (session) {
+      sessionData = brainstormSessionManager.getOrCreate(
+        session as string,
+        prompt.trim() as string,
+        methodology as string,
+        domain as string | undefined,
+        constraints as string | undefined
+      );
+
+      // Build context from previous rounds
+      if (includeHistory && sessionData.rounds.length > 0) {
+        const previousIdeas = brainstormSessionManager.buildIdeasContext(sessionData, true);
+        contextualizedExistingContext = existingContext
+          ? `${existingContext}\n\n${previousIdeas}`
+          : previousIdeas;
+      }
+
+      onProgress?.(`🧠 Session '${session}' (Round ${sessionData.rounds.length + 1})`);
     }
 
     let enhancedPrompt = buildBrainstormPrompt({
@@ -155,17 +184,72 @@ export const brainstormTool: UnifiedTool = {
       methodology: methodology as string,
       domain: domain as string | undefined,
       constraints: constraints as string | undefined,
-      existingContext: existingContext as string | undefined,
+      existingContext: contextualizedExistingContext as string | undefined,
       ideaCount: ideaCount as number,
       includeAnalysis: includeAnalysis as boolean
     });
 
     Logger.debug(`Brainstorm: Using methodology '${methodology}' for domain '${domain || 'general'}'`);
-    
+
     // Report progress to user
     onProgress?.(`Generating ${ideaCount} ideas via ${methodology} methodology...`);
-    
+
     // Execute with Gemini
-    return await executeGeminiCLI(enhancedPrompt, model as string | undefined, false, false, onProgress);
+    const result = await executeGeminiCLI(enhancedPrompt, model as string | undefined, false, false, onProgress);
+
+    // Save to session if provided
+    if (session && sessionData) {
+      // Parse ideas from response (simple extraction)
+      const ideas = parseIdeasFromResponse(result);
+      brainstormSessionManager.addRound(sessionData, prompt as string, result, ideas);
+      brainstormSessionManager.save(sessionData);
+      onProgress?.(`💾 Saved to session '${session}' (${sessionData.totalIdeas} total ideas, ${sessionData.activeIdeas} active)`);
+    }
+
+    return result;
   }
 };
+
+/**
+ * Parses ideas from Gemini's brainstorm response
+ * Extracts idea names, descriptions, and scores
+ */
+function parseIdeasFromResponse(response: string): Array<{
+  name: string;
+  description: string;
+  feasibility?: number;
+  impact?: number;
+  innovation?: number;
+}> {
+  const ideas: Array<any> = [];
+
+  // Pattern: ### Idea [N]: [Name]
+  const ideaPattern = /###\s+Idea\s+\d+:\s*(.+?)\n\*\*Description:\*\*\s*(.+?)(?=\n###|\n\*\*Feasibility|\n---|$)/gis;
+
+  let match;
+  while ((match = ideaPattern.exec(response)) !== null) {
+    const name = match[1].trim();
+    const description = match[2].trim();
+
+    // Try to extract scores
+    const feasibilityMatch = response.match(
+      new RegExp(`${name}[\\s\\S]{0,300}\\*\\*Feasibility:\\*\\*\\s*(\\d+)`, 'i')
+    );
+    const impactMatch = response.match(
+      new RegExp(`${name}[\\s\\S]{0,300}\\*\\*Impact:\\*\\*\\s*(\\d+)`, 'i')
+    );
+    const innovationMatch = response.match(
+      new RegExp(`${name}[\\s\\S]{0,300}\\*\\*Innovation:\\*\\*\\s*(\\d+)`, 'i')
+    );
+
+    ideas.push({
+      name,
+      description,
+      feasibility: feasibilityMatch ? parseInt(feasibilityMatch[1], 10) : undefined,
+      impact: impactMatch ? parseInt(impactMatch[1], 10) : undefined,
+      innovation: innovationMatch ? parseInt(innovationMatch[1], 10) : undefined
+    });
+  }
+
+  return ideas;
+}
