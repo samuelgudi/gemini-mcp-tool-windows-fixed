@@ -87,36 +87,36 @@ Gemini: ${truncatedResponse}`;
   /**
    * Saves a session
    */
-  save(session: AskGeminiSessionData): void {
-    this.sessionManager.save(session.sessionId, session);
+  async save(session: AskGeminiSessionData): Promise<void> {
+    await this.sessionManager.save(session.sessionId, session);
   }
 
   /**
    * Loads a session
    */
-  load(sessionId: string): AskGeminiSessionData | null {
-    return this.sessionManager.load(sessionId);
+  async load(sessionId: string): Promise<AskGeminiSessionData | null> {
+    return await this.sessionManager.load(sessionId);
   }
 
   /**
    * Lists all sessions
    */
-  list(): AskGeminiSessionData[] {
-    return this.sessionManager.list();
+  async list(): Promise<AskGeminiSessionData[]> {
+    return await this.sessionManager.list();
   }
 
   /**
    * Deletes a session
    */
-  delete(sessionId: string): boolean {
-    return this.sessionManager.delete(sessionId);
+  async delete(sessionId: string): Promise<boolean> {
+    return await this.sessionManager.delete(sessionId);
   }
 
   /**
    * Gets or creates a session
    */
-  getOrCreate(sessionId: string): AskGeminiSessionData {
-    const existing = this.load(sessionId);
+  async getOrCreate(sessionId: string): Promise<AskGeminiSessionData> {
+    const existing = await this.load(sessionId);
     if (existing) {
       return existing;
     }
@@ -126,8 +126,8 @@ Gemini: ${truncatedResponse}`;
   /**
    * Gets cache statistics
    */
-  getStats() {
-    return this.sessionManager.getStats();
+  async getStats() {
+    return await this.sessionManager.getStats();
   }
 }
 

@@ -7,6 +7,7 @@ import {
 } from '../constants.js';
 import { askGeminiSessionManager } from '../utils/askGeminiSessionManager.js';
 import { extractFilesFromPrompt } from '../utils/reviewPromptBuilder.js';
+import { Logger } from '../utils/logger.js';
 
 const askGeminiArgsSchema = z.object({
   prompt: z.string().min(1).describe("Analysis request. Use @ syntax to include files (e.g., '@largefile.js explain what this does') or ask general questions"),
@@ -49,15 +50,21 @@ export const askGeminiTool: UnifiedTool = {
     let enhancedPrompt = prompt as string;
 
     if (session) {
-      sessionData = askGeminiSessionManager.getOrCreate(session as string);
+      try {
+        sessionData = await askGeminiSessionManager.getOrCreate(session as string);
 
-      // Build conversation context if history is enabled
-      if (includeHistory && sessionData.conversationHistory.length > 0) {
-        const historyContext = askGeminiSessionManager.buildConversationContext(sessionData, 3);
-        enhancedPrompt = `${historyContext}\n\n# Current Question\n${prompt}`;
+        // Build conversation context if history is enabled
+        if (includeHistory && sessionData.conversationHistory.length > 0) {
+          const historyContext = askGeminiSessionManager.buildConversationContext(sessionData, 3);
+          enhancedPrompt = `${historyContext}\n\n# Current Question\n${prompt}`;
+        }
+
+        onProgress?.(`📝 Session '${session}' (Round ${sessionData.totalRounds + 1})`);
+      } catch (error) {
+        onProgress?.(`⚠️  Session loading failed: ${error instanceof Error ? error.message : String(error)}`);
+        Logger.error(`Failed to load session '${session}': ${error}`);
+        // Continue without session
       }
-
-      onProgress?.(`📝 Session '${session}' (Round ${sessionData.totalRounds + 1})`);
     }
 
     const result = await executeGeminiCLI(
@@ -70,16 +77,22 @@ export const askGeminiTool: UnifiedTool = {
 
     // Save to session if provided
     if (session && sessionData) {
-      const contextFiles = extractFilesFromPrompt(prompt as string);
-      askGeminiSessionManager.addRound(
-        sessionData,
-        prompt as string,
-        result,
-        model as string || 'gemini-2.5-pro',
-        contextFiles
-      );
-      askGeminiSessionManager.save(sessionData);
-      onProgress?.(`💾 Saved to session '${session}' (${sessionData.totalRounds} rounds)`);
+      try {
+        const contextFiles = extractFilesFromPrompt(prompt as string);
+        askGeminiSessionManager.addRound(
+          sessionData,
+          prompt as string,
+          result,
+          model as string || 'gemini-2.5-pro',
+          contextFiles
+        );
+        await askGeminiSessionManager.save(sessionData);
+        onProgress?.(`💾 Saved to session '${session}' (${sessionData.totalRounds} rounds)`);
+      } catch (error) {
+        onProgress?.(`⚠️  Session save failed: ${error instanceof Error ? error.message : String(error)}`);
+        Logger.error(`Failed to save session '${session}': ${error}`);
+        // Continue - result is still valid even if session save failed
+      }
     }
 
     if (changeMode) {

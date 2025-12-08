@@ -160,23 +160,29 @@ export const brainstormTool: UnifiedTool = {
     let contextualizedExistingContext = existingContext;
 
     if (session) {
-      sessionData = brainstormSessionManager.getOrCreate(
-        session as string,
-        prompt.trim() as string,
-        methodology as string,
-        domain as string | undefined,
-        constraints as string | undefined
-      );
+      try {
+        sessionData = await brainstormSessionManager.getOrCreate(
+          session as string,
+          prompt.trim() as string,
+          methodology as string,
+          domain as string | undefined,
+          constraints as string | undefined
+        );
 
-      // Build context from previous rounds
-      if (includeHistory && sessionData.rounds.length > 0) {
-        const previousIdeas = brainstormSessionManager.buildIdeasContext(sessionData, true);
-        contextualizedExistingContext = existingContext
-          ? `${existingContext}\n\n${previousIdeas}`
-          : previousIdeas;
+        // Build context from previous rounds
+        if (includeHistory && sessionData.rounds.length > 0) {
+          const previousIdeas = brainstormSessionManager.buildIdeasContext(sessionData, true);
+          contextualizedExistingContext = existingContext
+            ? `${existingContext}\n\n${previousIdeas}`
+            : previousIdeas;
+        }
+
+        onProgress?.(`🧠 Session '${session}' (Round ${sessionData.rounds.length + 1})`);
+      } catch (error) {
+        onProgress?.(`⚠️  Session loading failed: ${error instanceof Error ? error.message : String(error)}`);
+        Logger.error(`Failed to load session '${session}': ${error}`);
+        // Continue without session
       }
-
-      onProgress?.(`🧠 Session '${session}' (Round ${sessionData.rounds.length + 1})`);
     }
 
     let enhancedPrompt = buildBrainstormPrompt({
@@ -199,11 +205,17 @@ export const brainstormTool: UnifiedTool = {
 
     // Save to session if provided
     if (session && sessionData) {
-      // Parse ideas from response (simple extraction)
-      const ideas = parseIdeasFromResponse(result);
-      brainstormSessionManager.addRound(sessionData, prompt as string, result, ideas);
-      brainstormSessionManager.save(sessionData);
-      onProgress?.(`💾 Saved to session '${session}' (${sessionData.totalIdeas} total ideas, ${sessionData.activeIdeas} active)`);
+      try {
+        // Parse ideas from response (simple extraction)
+        const ideas = parseIdeasFromResponse(result);
+        brainstormSessionManager.addRound(sessionData, prompt as string, result, ideas);
+        await brainstormSessionManager.save(sessionData);
+        onProgress?.(`💾 Saved to session '${session}' (${sessionData.totalIdeas} total ideas, ${sessionData.activeIdeas} active)`);
+      } catch (error) {
+        onProgress?.(`⚠️  Session save failed: ${error instanceof Error ? error.message : String(error)}`);
+        Logger.error(`Failed to save session '${session}': ${error}`);
+        // Continue - result is still valid even if session save failed
+      }
     }
 
     return result;

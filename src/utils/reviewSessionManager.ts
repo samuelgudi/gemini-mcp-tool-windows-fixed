@@ -17,22 +17,22 @@ export class ReviewSessionManager {
   /**
    * Saves a review session (maintains existing interface)
    */
-  saveReviewSession(session: ReviewCodeSessionData): void {
-    this.sessionManager.save(session.sessionId, session);
+  async saveReviewSession(session: ReviewCodeSessionData): Promise<void> {
+    await this.sessionManager.save(session.sessionId, session);
   }
 
   /**
    * Loads a review session (maintains existing interface)
    */
-  loadReviewSession(sessionId: string): ReviewCodeSessionData | null {
-    return this.sessionManager.load(sessionId);
+  async loadReviewSession(sessionId: string): Promise<ReviewCodeSessionData | null> {
+    return await this.sessionManager.load(sessionId);
   }
 
   /**
    * Lists active review sessions
    */
-  listActiveSessions(): ReviewCodeSessionData[] {
-    return this.sessionManager.list();
+  async listActiveSessions(): Promise<ReviewCodeSessionData[]> {
+    return await this.sessionManager.list();
   }
 
   /**
@@ -63,8 +63,8 @@ export class ReviewSessionManager {
   /**
    * Gets cache statistics
    */
-  getReviewCacheStats() {
-    return this.sessionManager.getStats();
+  async getReviewCacheStats() {
+    return await this.sessionManager.getStats();
   }
 }
 
@@ -72,14 +72,14 @@ export class ReviewSessionManager {
 export const reviewSessionManager = new ReviewSessionManager();
 
 // Export existing function signatures for drop-in replacement
-export const saveReviewSession = (session: ReviewCodeSessionData) =>
-  reviewSessionManager.saveReviewSession(session);
+export const saveReviewSession = async (session: ReviewCodeSessionData) =>
+  await reviewSessionManager.saveReviewSession(session);
 
-export const loadReviewSession = (sessionId: string) =>
-  reviewSessionManager.loadReviewSession(sessionId);
+export const loadReviewSession = async (sessionId: string) =>
+  await reviewSessionManager.loadReviewSession(sessionId);
 
-export const listActiveSessions = () =>
-  reviewSessionManager.listActiveSessions();
+export const listActiveSessions = async () =>
+  await reviewSessionManager.listActiveSessions();
 
 export const createNewSession = (
   sessionId: string,
@@ -87,5 +87,5 @@ export const createNewSession = (
   focusFiles?: string[]
 ) => reviewSessionManager.createNewSession(sessionId, gitState, focusFiles);
 
-export const getReviewCacheStats = () =>
-  reviewSessionManager.getReviewCacheStats();
+export const getReviewCacheStats = async () =>
+  await reviewSessionManager.getReviewCacheStats();

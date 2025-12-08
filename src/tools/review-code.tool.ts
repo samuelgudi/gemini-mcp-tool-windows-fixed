@@ -106,7 +106,7 @@ export const reviewCodeTool: UnifiedTool = {
         session = createNewSession(targetSessionId, currentGitState, files);
         isNewSession = true;
       } else {
-        const existing = loadReviewSession(targetSessionId);
+        const existing = await loadReviewSession(targetSessionId);
 
         if (existing) {
           // Validate git state hasn't diverged
@@ -208,7 +208,7 @@ export const reviewCodeTool: UnifiedTool = {
       session.lastAccessedAt = Date.now();
 
       // Step 9: Save session
-      saveReviewSession(session);
+      await saveReviewSession(session);
       onProgress?.('💾 Session saved');
 
       // Step 10: Format and return response
