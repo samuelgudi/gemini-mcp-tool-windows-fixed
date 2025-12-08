@@ -64,7 +64,11 @@ const reviewCodeArgsSchema = z.object({
   includeHistory: z
     .boolean()
     .default(true)
-    .describe('Include conversation history in prompt')
+    .describe('Include conversation history in prompt'),
+  allowedTools: z
+    .array(z.string())
+    .optional()
+    .describe('Tools that Gemini can auto-approve without confirmation (e.g., [\'run_shell_command\']). Use sparingly for security.')
 });
 
 export const reviewCodeTool: UnifiedTool = {
@@ -84,7 +88,8 @@ export const reviewCodeTool: UnifiedTool = {
       severity,
       commentDecisions,
       model,
-      includeHistory
+      includeHistory,
+      allowedTools
     } = args;
 
     try {
@@ -171,7 +176,8 @@ export const reviewCodeTool: UnifiedTool = {
         model as string | undefined,
         false, // sandbox
         false, // changeMode - we parse manually
-        onProgress
+        onProgress,
+        allowedTools as string[] | undefined
       );
 
       // Step 7: Parse response into structured comments

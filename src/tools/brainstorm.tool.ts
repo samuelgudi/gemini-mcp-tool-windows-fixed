@@ -127,6 +127,7 @@ const brainstormArgsSchema = z.object({
   ideaCount: z.number().int().positive().default(12).describe("Target number of ideas to generate (default: 10-15)"),
   includeAnalysis: z.boolean().default(true).describe("Include feasibility, impact, and implementation analysis for generated ideas"),
   includeHistory: z.boolean().default(true).describe("Include previously generated ideas in context (only applies when session is provided). Default: true"),
+  allowedTools: z.array(z.string()).optional().describe("Tools that Gemini can auto-approve without confirmation (e.g., ['run_shell_command']). Use sparingly for security."),
 });
 
 export const brainstormTool: UnifiedTool = {
@@ -148,7 +149,8 @@ export const brainstormTool: UnifiedTool = {
       existingContext,
       ideaCount = 12,
       includeAnalysis = true,
-      includeHistory = true
+      includeHistory = true,
+      allowedTools
     } = args;
 
     if (!prompt?.trim()) {
@@ -201,7 +203,7 @@ export const brainstormTool: UnifiedTool = {
     onProgress?.(`Generating ${ideaCount} ideas via ${methodology} methodology...`);
 
     // Execute with Gemini
-    const result = await executeGeminiCLI(enhancedPrompt, model as string | undefined, false, false, onProgress);
+    const result = await executeGeminiCLI(enhancedPrompt, model as string | undefined, false, false, onProgress, allowedTools as string[] | undefined);
 
     // Save to session if provided
     if (session && sessionData) {

@@ -70,6 +70,7 @@ export const CLI = {
     SANDBOX: "-s",
     PROMPT: "-p",
     HELP: "-help",
+    ALLOWED_TOOLS: "--allowed-tools",
   },
   // Default values
   DEFAULTS: {
@@ -173,6 +174,9 @@ export interface ToolArguments {
   // --> shared session parameters (ask-gemini, brainstorm, review-code)
   session?: string; // Session ID for conversation continuity
   includeHistory?: boolean; // Include conversation/review history in prompt
+
+  // --> tool permissions (ask-gemini)
+  allowedTools?: string[]; // Tools that Gemini can auto-approve (e.g., ["run_shell_command"])
 
   // --> brainstorm tool
   methodology?: string; // Brainstorming framework to use

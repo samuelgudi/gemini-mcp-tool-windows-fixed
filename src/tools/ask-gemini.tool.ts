@@ -16,6 +16,7 @@ const askGeminiArgsSchema = z.object({
   sandbox: z.boolean().default(false).describe("Use sandbox mode (-s flag) to safely test code changes, execute scripts, or run potentially risky operations in an isolated environment"),
   changeMode: z.boolean().default(false).describe("Enable structured change mode - formats prompts to prevent tool errors and returns structured edit suggestions that Claude can apply directly"),
   includeHistory: z.boolean().default(true).describe("Include conversation history in context (only applies when session is provided). Default: true"),
+  allowedTools: z.array(z.string()).optional().describe("Tools that Gemini can auto-approve without confirmation (e.g., ['run_shell_command'] for git commands). Use sparingly for security."),
   chunkIndex: z.union([z.number(), z.string()]).optional().describe("Which chunk to return (1-based)"),
   chunkCacheKey: z.string().optional().describe("Optional cache key for continuation"),
 });
@@ -29,7 +30,7 @@ export const askGeminiTool: UnifiedTool = {
   },
   category: 'gemini',
   execute: async (args, onProgress) => {
-    const { prompt, session, model, sandbox, changeMode, includeHistory, chunkIndex, chunkCacheKey } = args;
+    const { prompt, session, model, sandbox, changeMode, includeHistory, allowedTools, chunkIndex, chunkCacheKey } = args;
 
     if (!prompt?.trim()) {
       throw new Error(ERROR_MESSAGES.NO_PROMPT_PROVIDED);
@@ -72,7 +73,8 @@ export const askGeminiTool: UnifiedTool = {
       model as string | undefined,
       !!sandbox,
       !!changeMode,
-      onProgress
+      onProgress,
+      allowedTools as string[] | undefined
     );
 
     // Save to session if provided
