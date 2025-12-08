@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "SlashCommand(/review-gemini)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}

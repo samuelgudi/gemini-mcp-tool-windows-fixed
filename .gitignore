@@ -9,6 +9,9 @@ dist/
 .idea/
 .npmignore
 
+#Claude
+.claude/
+
 
 # Docs Site
 docs/.vitepress/cache/
