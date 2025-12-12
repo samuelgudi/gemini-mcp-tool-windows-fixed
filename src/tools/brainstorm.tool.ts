@@ -119,7 +119,7 @@ ${domain ? `Given the ${domain} domain, I'll apply the most effective combinatio
 const brainstormArgsSchema = z.object({
   prompt: z.string().min(1).describe("Primary brainstorming challenge or question to explore"),
   session: z.string().optional().describe("Session ID for tracking ideas across rounds (e.g., 'feature-ideas'). Enables iterative brainstorming with context."),
-  model: z.string().optional().describe("Optional model to use (e.g., 'gemini-2.5-flash'). If not specified, uses the default model (gemini-2.5-pro)."),
+  model: z.string().optional().describe("Optional model: 'gemini-3-pro-preview' (default), 'gemini-2.5-pro', 'gemini-2.5-flash'"),
   methodology: z.enum(['divergent', 'convergent', 'scamper', 'design-thinking', 'lateral', 'auto']).default('auto').describe("Brainstorming framework: 'divergent' (generate many ideas), 'convergent' (refine existing), 'scamper' (systematic triggers), 'design-thinking' (human-centered), 'lateral' (unexpected connections), 'auto' (AI selects best)"),
   domain: z.string().optional().describe("Domain context for specialized brainstorming (e.g., 'software', 'business', 'creative', 'research', 'product', 'marketing')"),
   constraints: z.string().optional().describe("Known limitations, requirements, or boundaries (budget, time, technical, legal, etc.)"),

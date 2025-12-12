@@ -3,7 +3,8 @@ import { UnifiedTool } from './registry.js';
 import { executeGeminiCLI, processChangeModeOutput } from '../utils/geminiExecutor.js';
 import {
   ERROR_MESSAGES,
-  STATUS_MESSAGES
+  STATUS_MESSAGES,
+  MODELS
 } from '../constants.js';
 import { askGeminiSessionManager } from '../utils/askGeminiSessionManager.js';
 import { extractFilesFromPrompt } from '../utils/reviewPromptBuilder.js';
@@ -12,7 +13,7 @@ import { Logger } from '../utils/logger.js';
 const askGeminiArgsSchema = z.object({
   prompt: z.string().min(1).describe("Analysis request. Use @ syntax to include files (e.g., '@largefile.js explain what this does') or ask general questions"),
   session: z.string().optional().describe("Session ID for conversation continuity (e.g., 'typescript-learning'). Maintains context across multiple questions."),
-  model: z.string().optional().describe("Optional model to use (e.g., 'gemini-2.5-flash'). If not specified, uses the default model (gemini-2.5-pro)."),
+  model: z.string().optional().describe("Optional model: 'gemini-3-pro-preview' (default), 'gemini-2.5-pro', 'gemini-2.5-flash'"),
   sandbox: z.boolean().default(false).describe("Use sandbox mode (-s flag) to safely test code changes, execute scripts, or run potentially risky operations in an isolated environment"),
   changeMode: z.boolean().default(false).describe("Enable structured change mode - formats prompts to prevent tool errors and returns structured edit suggestions that Claude can apply directly"),
   includeHistory: z.boolean().default(true).describe("Include conversation history in context (only applies when session is provided). Default: true"),
@@ -85,7 +86,7 @@ export const askGeminiTool: UnifiedTool = {
           sessionData,
           prompt as string,
           result,
-          model as string || 'gemini-2.5-pro',
+          model as string || MODELS.PRO_3,
           contextFiles
         );
         await askGeminiSessionManager.save(sessionData);
