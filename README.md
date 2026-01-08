@@ -1,198 +1,70 @@
-# Gemini MCP Tool
+# gemini-mcp-tool-windows-fixed
 
-<br>
+Windows-compatible fork of [@maxanatsko/gemini-mcp-tool](https://github.com/maxanatsko/gemini-mcp-tool).
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   Model Context Protocol server for Google Gemini CLI           │
-│                                                                 │
-│   Claude ──────────────── Gemini                                │
-│                                                                 │
-│   Leverage Gemini's massive token window                        │
-│   for large file and codebase analysis                          │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+## Fixes Applied
 
-<br>
+### 1. ENOENT on Windows
+**Problem**: `spawn('gemini', ...)` fails on Windows because `gemini` is installed as `gemini.cmd` (npm wrapper), which requires a shell to execute.
 
-**Version** `2.1.0`
-**License** `MIT`
+**Fix**: `commandExecutor.ts` line 16
+```typescript
+// Before
+shell: false
 
----
-
-<br>
-
-## Prerequisites
-
-```
-Node.js ≥ 16.0.0
-Google Gemini CLI (configured)
+// After
+shell: process.platform === 'win32'
 ```
 
-<br>
+### 2. Deprecated `-p` Flag
+**Problem**: Gemini CLI v0.23.0+ deprecated the `-p`/`--prompt` flag in favor of positional arguments.
 
----
+**Fix**: `geminiExecutor.ts` lines 106 and 133
+```typescript
+// Before
+args.push(CLI.FLAGS.PROMPT, finalPrompt);
 
-<br>
+// After
+args.push(finalPrompt);
+```
 
 ## Installation
 
-<br>
-
-### Recommended
-
+### Option 1: Local (Recommended)
 ```bash
-claude mcp add gemini-cli -- npx -y maxanatsko/gemini-mcp-tool
+git clone https://github.com/samuelgudi/gemini-mcp-tool-windows-fixed.git
+cd gemini-mcp-tool-windows-fixed
+npm install && npm run build
 ```
 
-<br>
-
-### Local Development
-
+Configure MCP:
 ```bash
-git clone https://github.com/maxanatsko/gemini-mcp-tool.git
-cd gemini-mcp-tool
-
-npm install
-npm run build
-npm link
-
-claude mcp add gemini-cli -- gemini-mcp
+claude mcp add gemini-cli -- node /path/to/gemini-mcp-tool-windows-fixed/dist/index.js
 ```
 
-<br>
-
-### Verify
-
+### Option 2: From GitHub via npx
 ```bash
-/mcp
+claude mcp add gemini-cli -- npx github:samuelgudi/gemini-mcp-tool-windows-fixed
 ```
 
-<br>
+## Prerequisites
 
----
+- Gemini CLI installed and authenticated: `npm install -g @google/gemini-cli && gemini auth login`
+- Node.js >= 16.0.0
 
-<br>
-
-## Configuration
-
-<br>
-
-### Claude Desktop
-
-```json
-{
-  "mcpServers": {
-    "gemini-cli": {
-      "command": "npx",
-      "args": ["-y", "maxanatsko/gemini-mcp-tool"]
-    }
-  }
-}
-```
-
-<br>
-
-### Config Locations
-
-```
-macOS     ~/Library/Application Support/Claude/claude_desktop_config.json
-Windows   %APPDATA%\Claude\claude_desktop_config.json
-Linux     ~/.config/claude/claude_desktop_config.json
-```
-
-<br>
-
----
-
-<br>
-
-## Usage
-
-<br>
-
-### File Analysis
-
-```
-ask gemini to analyze @src/main.js
-use gemini to summarize @.
-analyze @package.json dependencies
-```
-
-<br>
-
-### General Questions
-
-```
-ask gemini about React best practices
-use gemini to explain div centering
-ask gemini for latest tech news
-```
-
-<br>
-
-### Sandbox Mode
-
-```
-use gemini sandbox to run @script.py
-ask gemini to safely test this code
-use gemini sandbox to install numpy
-```
-
-<br>
-
----
-
-<br>
-
-## Tools
-
-<br>
+## Available Tools
 
 | Tool | Description |
-|:-----|:------------|
+|------|-------------|
 | `ask-gemini` | Query Gemini with `@` file references |
-| `brainstorm` | Creative ideation with frameworks |
+| `brainstorm` | Ideation with creative frameworks |
 | `review-code` | Interactive code review sessions |
-| `ping` | Connection test |
-| `help` | CLI documentation |
 
-<br>
+## Credits
 
-### Parameters
+Original package by [@maxanatsko](https://github.com/maxanatsko/gemini-mcp-tool).
+Windows fixes by [@samuelgudi](https://github.com/samuelgudi).
 
-<br>
+## License
 
-**ask-gemini**
-
-```
-prompt      Required    Analysis request with @ syntax
-model       Optional    gemini-2.5-pro (default)
-sandbox     Optional    Safe code execution
-session     Optional    Conversation continuity
-changeMode  Optional    Structured edit suggestions
-```
-
-<br>
-
----
-
-<br>
-
-## Links
-
-<br>
-
-[Documentation](https://jamubc.github.io/gemini-mcp-tool/)
-[Original Project](https://github.com/jamubc/gemini-mcp-tool)
-[This Fork](https://github.com/maxanatsko/gemini-mcp-tool)
-
-<br>
-
----
-
-<br>
-
-<sub>MIT License — Not affiliated with Google</sub>
+MIT
