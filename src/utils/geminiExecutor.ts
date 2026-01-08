@@ -103,7 +103,7 @@ ${prompt_processed}
     ? `"${prompt_processed}"`
     : prompt_processed;
 
-  args.push(CLI.FLAGS.PROMPT, finalPrompt);
+  args.push(finalPrompt);
   
   try {
     return await executeCommand(CLI.COMMANDS.GEMINI, args, onProgress, cwd);
@@ -130,7 +130,7 @@ ${prompt_processed}
         ? `"${prompt_processed}"`
         : prompt_processed;
 
-      fallbackArgs.push(CLI.FLAGS.PROMPT, fallbackPrompt);
+      fallbackArgs.push(fallbackPrompt);
       try {
         const result = await executeCommand(CLI.COMMANDS.GEMINI, fallbackArgs, onProgress, cwd);
         Logger.warn(`Successfully executed with ${MODELS.FLASH} fallback.`);

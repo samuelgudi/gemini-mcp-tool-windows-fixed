@@ -1,14 +1,14 @@
 {
-  "name": "@maxanatsko/gemini-mcp-tool",
-  "version": "2.3.3",
-  "description": "MCP server for Gemini CLI integration",
+  "name": "gemini-mcp-tool-windows-fixed",
+  "version": "2.3.4",
+  "description": "MCP server for Gemini CLI integration (Windows-compatible fork)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "gemini-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js",
+    "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc && node dist/index.js",
     "test": "echo \"No tests yet\" && exit 0",
@@ -27,16 +27,16 @@
     "ai",
     "llm"
   ],
-  "author": "maxanatsko (fork of jamubc/gemini-mcp-tool)",
+  "author": "samuelgudi (Windows fix fork of maxanatsko/gemini-mcp-tool)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/maxanatsko/gemini-mcp-tool.git"
+    "url": "git+https://github.com/samuelgudi/gemini-mcp-tool-windows-fixed.git"
   },
   "bugs": {
-    "url": "https://github.com/maxanatsko/gemini-mcp-tool/issues"
+    "url": "https://github.com/samuelgudi/gemini-mcp-tool-windows-fixed/issues"
   },
-  "homepage": "https://github.com/maxanatsko/gemini-mcp-tool#readme",
+  "homepage": "https://github.com/samuelgudi/gemini-mcp-tool-windows-fixed#readme",
   "engines": {
     "node": ">=16.0.0"
   },
